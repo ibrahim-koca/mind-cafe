@@ -1,4 +1,4 @@
-# ☕ Digital Cozy Sanctuary
+# ☕ MindCafe
 
 > Web tarayıcınızda çalışan, gerçek zamanlı sentetik ses motoruna sahip, interaktif ve tamamen duyarlı bir dijital çalışma sığınağı ve odaklanma alanı.
 
