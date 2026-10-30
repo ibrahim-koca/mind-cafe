@@ -1,0 +1,1930 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Cozy Café — İnteraktif Odak & Rahatlama Alanı</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* ==========================================
+           1. ATMOSFERİK RENK DEĞİŞKENLERİ (4 TEMA: GÜN BATIMI, GECE, KIŞ, SABAH)
+           ========================================== */
+        :root, [data-theme="sunset"] {
+            --sky-top: #1d1135;
+            --sky-mid: #7c3f58;
+            --sky-horizon: #f28d52;
+            --sun-opacity: 0.95;
+            --sun-y: 230px;
+            --moon-opacity: 0;
+            --snow-accumulation: 0;
+            --city-far: #2d1b3d;
+            --city-near: #1b1026;
+            --city-window: #ffd166;
+            --city-window-opacity: 0.65;
+            --wall-color: #22162b;
+            --wall-trim: #160d1c;
+            --window-frame: #180f1f;
+            --desk-top: #4a2c2a;
+            --desk-edge: #301b1a;
+            --mug-body: #e8d8c8;
+            --ambient-overlay: rgba(255, 120, 70, 0.08);
+            --accent: #f59e0b;
+            --accent-glow: rgba(245, 158, 11, 0.35);
+        }
+
+        [data-theme="night"] {
+            --sky-top: #050714;
+            --sky-mid: #0d132e;
+            --sky-horizon: #1b264f;
+            --sun-opacity: 0;
+            --sun-y: 340px;
+            --moon-opacity: 1;
+            --snow-accumulation: 0;
+            --city-far: #0e1428;
+            --city-near: #070b17;
+            --city-window: #fde047;
+            --city-window-opacity: 0.92;
+            --wall-color: #0e1222;
+            --wall-trim: #080b14;
+            --window-frame: #0a0d18;
+            --desk-top: #261b25;
+            --desk-edge: #171017;
+            --mug-body: #cbd5e1;
+            --ambient-overlay: rgba(10, 16, 40, 0.42);
+            --accent: #818cf8;
+            --accent-glow: rgba(129, 140, 248, 0.35);
+        }
+
+        [data-theme="winter"] {
+            --sky-top: #0f172a;
+            --sky-mid: #1e293b;
+            --sky-horizon: #64748b;
+            --sun-opacity: 0;
+            --sun-y: 340px;
+            --moon-opacity: 0.85;
+            --snow-accumulation: 1;
+            --city-far: #334155;
+            --city-near: #1e293b;
+            --city-window: #fef08a;
+            --city-window-opacity: 0.88;
+            --wall-color: #161e2e;
+            --wall-trim: #0d131f;
+            --window-frame: #0f172a;
+            --desk-top: #3b2824;
+            --desk-edge: #241715;
+            --mug-body: #f1f5f9;
+            --ambient-overlay: rgba(148, 163, 184, 0.12);
+            --accent: #38bdf8;
+            --accent-glow: rgba(56, 189, 248, 0.35);
+        }
+
+        [data-theme="day"] {
+            --sky-top: #38bdf8;
+            --sky-mid: #93c5fd;
+            --sky-horizon: #fef3c7;
+            --sun-opacity: 1;
+            --sun-y: 120px;
+            --moon-opacity: 0;
+            --snow-accumulation: 0;
+            --city-far: #64748b;
+            --city-near: #475569;
+            --city-window: #e2e8f0;
+            --city-window-opacity: 0.15;
+            --wall-color: #4a3f39;
+            --wall-trim: #332b27;
+            --window-frame: #2b2320;
+            --desk-top: #6e473b;
+            --desk-edge: #4d3027;
+            --mug-body: #fffbeb;
+            --ambient-overlay: rgba(255, 250, 230, 0.04);
+            --accent: #fb923c;
+            --accent-glow: rgba(251, 146, 60, 0.35);
+        }
+
+        /* Mekan (Environment) Bazlı Oda Duvarı Dokunuşları */
+        body[data-env="cabin"] {
+            --wall-color: #2c1a14;
+            --wall-trim: #1a0f0c;
+            --desk-top: #523022;
+        }
+        body[data-env="zen"] {
+            --wall-color: #1f2421;
+            --wall-trim: #121614;
+            --desk-top: #4d3629;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Inter', system-ui, sans-serif;
+            background-color: #090b12;
+            color: #f8fafc;
+        }
+
+        .mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* ==========================================
+           2. SVG SAHNE GEÇİŞLERİ VE MEKAN KATMANLARI
+           ========================================== */
+        .svg-transition {
+            transition: fill 0.9s cubic-bezier(0.4, 0, 0.2, 1),
+                        stop-color 0.9s cubic-bezier(0.4, 0, 0.2, 1),
+                        opacity 0.8s ease,
+                        transform 0.9s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .scene-interactive {
+            cursor: pointer;
+            transition: filter 0.25s ease, transform 0.25s ease;
+        }
+
+        .scene-interactive:hover {
+            filter: drop-shadow(0 0 16px rgba(255, 220, 130, 0.65));
+        }
+
+        /* Mekan Görünürlük Yönetimi (Cafe / Cabin / Zen) */
+        .env-layer {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.65s ease;
+        }
+        body[data-env="cafe"] .env-cafe,
+        body[data-env="cabin"] .env-cabin,
+        body[data-env="zen"] .env-zen {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Şömine Alevi Animasyonu */
+        @keyframes flameFlicker {
+            0%, 100% { transform: scaleY(1) scaleX(1) rotate(0deg); }
+            25% { transform: scaleY(1.09) scaleX(0.95) rotate(-1.5deg); }
+            50% { transform: scaleY(0.94) scaleX(1.04) rotate(1.5deg); }
+            75% { transform: scaleY(1.12) scaleX(0.97) rotate(-1deg); }
+        }
+        .fireplace-flames {
+            transform-origin: 215px 625px;
+            animation: flameFlicker 1.4s infinite ease-in-out;
+            transition: opacity 0.35s ease, filter 0.35s ease;
+        }
+        .fireplace-stoked {
+            filter: drop-shadow(0 0 28px rgba(251, 146, 60, 0.95)) !important;
+        }
+
+        /* Zen Fener Salınımı */
+        @keyframes lanternSway {
+            0%, 100% { transform: rotate(-2deg); }
+            50% { transform: rotate(2deg); }
+        }
+        .zen-lantern {
+            transform-origin: 1580px 65px;
+            animation: lanternSway 5s infinite ease-in-out;
+        }
+
+        /* Sağdaki Masa Lambası Işık Hüzmesi ve Oda Karartma/Isıtma */
+        #lamp-cone, #lamp-desk-glow, #lamp-bulb-glow {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body[data-lamp="on"] #lamp-cone { opacity: 0.9; }
+        body[data-lamp="on"] #lamp-desk-glow { opacity: 0.95; }
+        body[data-lamp="on"] #lamp-bulb-glow { opacity: 1; }
+
+        #lamp-pull-cord {
+            transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .cord-pulled {
+            transform: translateY(16px);
+        }
+
+        #room-darkness-overlay {
+            background: rgba(5, 7, 18, 0.28);
+            opacity: 1;
+            transition: opacity 0.5s ease, background 0.5s ease;
+        }
+        body[data-lamp="on"] #room-darkness-overlay {
+            background: radial-gradient(circle at 75% 68%, rgba(251, 191, 36, 0.12), rgba(5, 7, 18, 0.08) 65%);
+        }
+
+        /* Kahve Buharı Animasyonu */
+        .steam-path {
+            stroke-dasharray: 42;
+            stroke-dashoffset: 42;
+            animation: steamRise 3.2s infinite ease-in-out;
+        }
+        .steam-path:nth-child(2) { animation-delay: 1.1s; }
+        .steam-path:nth-child(3) { animation-delay: 2.2s; }
+
+        .steam-boost .steam-path {
+            animation-duration: 1.1s !important;
+            stroke: rgba(255, 255, 255, 0.95) !important;
+            stroke-width: 5.5px !important;
+        }
+
+        @keyframes steamRise {
+            0% { stroke-dashoffset: 42; opacity: 0; transform: translateY(4px); }
+            45% { opacity: 0.7; }
+            100% { stroke-dashoffset: -42; opacity: 0; transform: translateY(-22px); }
+        }
+
+        /* Klavye / Laptop Aktif Yazım Parlaması */
+        @keyframes screenTypingPulse {
+            0%, 100% { opacity: 0.82; }
+            50% { opacity: 1; filter: drop-shadow(0 0 18px rgba(129, 140, 248, 0.85)); }
+        }
+        .typing-active {
+            animation: screenTypingPulse 0.8s infinite ease-in-out;
+        }
+
+        /* Kedi Kuyruk, Nefes ve Kalp Animasyonu */
+        @keyframes tailWag {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(-10deg); }
+        }
+        #cat-tail {
+            transform-origin: 485px 865px;
+            animation: tailWag 4s infinite ease-in-out;
+        }
+
+        @keyframes catPurrShake {
+            0%, 100% { transform: scale(1); }
+            25% { transform: scale(1.03, 0.97); }
+            50% { transform: scale(0.98, 1.02); }
+            75% { transform: scale(1.02, 0.98); }
+        }
+        .cat-purring {
+            transform-origin: 550px 855px;
+            animation: catPurrShake 0.35s infinite ease-in-out;
+        }
+
+        #cat-heart {
+            opacity: 0;
+            transition: opacity 0.3s ease, transform 0.6s ease;
+        }
+        .heart-float {
+            opacity: 1 !important;
+            transform: translateY(-28px) scale(1.15);
+        }
+
+        /* ==========================================
+           3. GLASSMORPHISM, POINTER-EVENTS FIX & MOBİL UYUMLULUK
+           ========================================== */
+        .ui-layer {
+            pointer-events: none;
+        }
+
+        .glass-panel {
+            background: rgba(13, 16, 28, 0.78);
+            backdrop-filter: blur(22px) saturate(165%);
+            -webkit-backdrop-filter: blur(22px) saturate(165%);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.7),
+                        inset 0 1px 0 0 rgba(255, 255, 255, 0.18);
+            transition: opacity 0.26s cubic-bezier(0.16, 1, 0.3, 1),
+                        transform 0.26s cubic-bezier(0.16, 1, 0.3, 1),
+                        visibility 0.26s;
+        }
+
+        .glass-panel.active,
+        .bottom-dock,
+        .top-bar-pill {
+            opacity: 1;
+            visibility: visible;
+            pointer-events: auto;
+            transform: translateY(0) scale(1);
+        }
+
+        /* KRİTİK DÜZELTME: Gizli paneller asla tıklanamaz (Hayalet Tıklama Önleyici) */
+        .glass-panel.panel-hidden {
+            opacity: 0 !important;
+            pointer-events: none !important;
+            visibility: hidden !important;
+            transform: translateY(16px) scale(0.96) !important;
+        }
+
+        .glass-panel.panel-hidden * {
+            pointer-events: none !important;
+        }
+
+        /* MOBİL VE TABLET (< 768px) ALT ÇEKMECE (BOTTOM-SHEET) DÜZENİ */
+        @media (max-width: 767px) {
+            .floating-side-panel {
+                left: 12px !important;
+                right: 12px !important;
+                top: auto !important;
+                bottom: 78px !important;
+                width: auto !important;
+                max-height: 58vh !important;
+                overflow-y: auto !important;
+            }
+        }
+
+        /* Özel Ses Slider Tasarımı */
+        input[type="range"].cozy-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.14);
+            outline: none;
+            cursor: pointer;
+        }
+
+        input[type="range"].cozy-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #ffffff;
+            border: 3px solid var(--accent);
+            box-shadow: 0 0 12px var(--accent-glow);
+            cursor: pointer;
+            transition: transform 0.15s ease, background-color 0.2s ease;
+        }
+
+        input[type="range"].cozy-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.18);
+        }
+
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.22); border-radius: 999px; }
+    </style>
+</head>
+<body data-theme="sunset" data-env="cafe" data-lamp="on">
+
+    <!-- ==========================================================
+         KATMAN 1: TAM EKRAN İNTERAKTİF KAFE, DAĞ EVİ & ZEN SAHNESİ
+         ========================================================== -->
+    <div class="relative w-screen h-screen overflow-hidden select-none">
+
+        <svg id="cozy-scene-svg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice" class="w-full h-full block">
+            <defs>
+                <!-- Gökyüzü Gradyanı -->
+                <linearGradient id="skyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" class="svg-transition" style="stop-color: var(--sky-top)" />
+                    <stop offset="55%" class="svg-transition" style="stop-color: var(--sky-mid)" />
+                    <stop offset="100%" class="svg-transition" style="stop-color: var(--sky-horizon)" />
+                </linearGradient>
+
+                <!-- Sağdaki Masa Lambası Işık Hüzmesi -->
+                <linearGradient id="lampConeGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="#fde047" stop-opacity="0.58" />
+                    <stop offset="55%" stop-color="#f59e0b" stop-opacity="0.22" />
+                    <stop offset="100%" stop-color="#f59e0b" stop-opacity="0" />
+                </linearGradient>
+
+                <!-- Masa Yüzeyi Yansıma Gradyanı -->
+                <radialGradient id="deskSpotGrad" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#fef08a" stop-opacity="0.5" />
+                    <stop offset="60%" stop-color="#f59e0b" stop-opacity="0.18" />
+                    <stop offset="100%" stop-color="#f59e0b" stop-opacity="0" />
+                </radialGradient>
+
+                <!-- Şömine Sıcak Yansıma Gradyanı -->
+                <radialGradient id="fireplaceGlowGrad" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stop-color="#fb923c" stop-opacity="0.55" />
+                    <stop offset="60%" stop-color="#ea580c" stop-opacity="0.18" />
+                    <stop offset="100%" stop-color="#ea580c" stop-opacity="0" />
+                </radialGradient>
+
+                <!-- Laptop Ekran Işığı -->
+                <linearGradient id="screenGlowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#818cf8" stop-opacity="0.92" />
+                    <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.75" />
+                </linearGradient>
+
+                <!-- Pencere Kırpma Maskesi -->
+                <clipPath id="windowClip">
+                    <rect x="420" y="65" width="1080" height="620" rx="18" />
+                </clipPath>
+            </defs>
+
+            <!-- 1. ARKA PLAN DUVAR VE MEKAN DOKULARI -->
+            <rect width="1920" height="1080" class="svg-transition" style="fill: var(--wall-color)" />
+
+            <!-- Dağ Evi Ahşap Kütük Çizgileri (Cabin Modunda) -->
+            <g class="env-layer env-cabin" stroke="rgba(0,0,0,0.22)" stroke-width="3">
+                <line x1="0" y1="140" x2="1920" y2="140" />
+                <line x1="0" y1="280" x2="1920" y2="280" />
+                <line x1="0" y1="420" x2="1920" y2="420" />
+                <line x1="0" y1="560" x2="1920" y2="560" />
+            </g>
+
+            <!-- 2. PENCERE VE DIŞ DÜNYA (TIKLANABİLİR ALAN #1 - MERKEZ) -->
+            <g id="window-interactive" class="scene-interactive" data-tooltip="🌤️ Pencere: Mevsim & Zamanı Değiştir (Gün Batımı / Gece / Kış & Kar / Sabah)">
+                <g clip-path="url(#windowClip)">
+                    <!-- Gökyüzü -->
+                    <rect x="420" y="65" width="1080" height="620" fill="url(#skyGrad)" />
+
+                    <!-- Güneş -->
+                    <circle cx="960" cy="0" r="95" fill="#fde047" opacity="0.25" class="svg-transition"
+                            style="transform: translateY(var(--sun-y)); opacity: var(--sun-opacity); filter: blur(18px);" />
+                    <circle cx="960" cy="0" r="62" fill="#fffbeb" class="svg-transition"
+                            style="transform: translateY(var(--sun-y)); opacity: var(--sun-opacity);" />
+
+                    <!-- Hilal Ay -->
+                    <g class="svg-transition" style="opacity: var(--moon-opacity);">
+                        <circle cx="1270" cy="175" r="44" fill="#fef9c3" opacity="0.22" style="filter: blur(12px);" />
+                        <path d="M1260 135 A42 42 0 1 0 1302 195 A34 34 0 1 1 1260 135 Z" fill="#fef08a" />
+                    </g>
+
+                    <!-- Ortak Uzak Dağlar -->
+                    <polygon points="390,685 620,400 890,685" class="svg-transition" style="fill: var(--city-far); opacity: 0.72;" />
+                    <polygon points="730,685 1050,360 1390,685" class="svg-transition" style="fill: var(--city-far); opacity: 0.86;" />
+                    <polygon points="1180,685 1410,430 1560,685" class="svg-transition" style="fill: var(--city-far); opacity: 0.76;" />
+
+                    <!-- Kış Modunda Dağ Zirvesi Karları -->
+                    <g class="svg-transition" style="opacity: var(--snow-accumulation);" fill="#f1f5f9">
+                        <polygon points="620,400 555,470 595,462 620,480 650,460 682,470" opacity="0.85" />
+                        <polygon points="1050,360 970,445 1015,435 1050,455 1085,432 1130,445" opacity="0.9" />
+                        <polygon points="1410,430 1355,495 1390,485 1415,500 1455,490" opacity="0.85" />
+                    </g>
+
+                    <!-- MEKAN A: ŞEHİR KAFESİ MANZARASI (BİNALAR & IŞIKLAR) -->
+                    <g class="env-layer env-cafe">
+                        <g class="svg-transition" style="fill: var(--city-far)">
+                            <rect x="450" y="490" width="75" height="195" />
+                            <rect x="545" y="450" width="90" height="235" />
+                            <rect x="810" y="440" width="85" height="245" />
+                            <rect x="1110" y="460" width="95" height="225" />
+                            <rect x="1370" y="470" width="90" height="215" />
+                        </g>
+                        <g class="svg-transition" style="fill: var(--city-near)">
+                            <rect x="420" y="540" width="95" height="145" />
+                            <rect x="565" y="500" width="85" height="185" />
+                            <rect x="675" y="465" width="110" height="220" />
+                            <rect x="800" y="530" width="75" height="155" />
+                            <rect x="940" y="450" width="120" height="235" />
+                            <rect x="1075" y="520" width="80" height="165" />
+                            <rect x="1175" y="485" width="105" height="200" />
+                            <rect x="1310" y="525" width="95" height="160" />
+                        </g>
+                        <g class="svg-transition" style="fill: var(--city-window); opacity: var(--city-window-opacity);">
+                            <rect x="695" y="490" width="12" height="18" rx="2" />
+                            <rect x="720" y="490" width="12" height="18" rx="2" />
+                            <rect x="745" y="490" width="12" height="18" rx="2" />
+                            <rect x="695" y="522" width="12" height="18" rx="2" />
+                            <rect x="745" y="522" width="12" height="18" rx="2" />
+                            <rect x="960" y="475" width="14" height="16" rx="2" />
+                            <rect x="990" y="475" width="14" height="16" rx="2" />
+                            <rect x="1020" y="475" width="14" height="16" rx="2" />
+                            <rect x="960" y="505" width="14" height="16" rx="2" />
+                            <rect x="990" y="505" width="14" height="16" rx="2" />
+                            <rect x="1195" y="510" width="12" height="16" rx="2" />
+                            <rect x="1220" y="510" width="12" height="16" rx="2" />
+                            <rect x="1245" y="510" width="12" height="16" rx="2" />
+                        </g>
+                    </g>
+
+                    <!-- MEKAN B: DAĞ EVİ MANZARASI (ÇAM ORMANI SİLÜETİ) -->
+                    <g class="env-layer env-cabin">
+                        <g fill="#0f2922" opacity="0.95">
+                            <!-- Çam Ağaçları -->
+                            <polygon points="480,685 525,520 570,685" />
+                            <polygon points="490,590 525,470 560,590" />
+                            <polygon points="585,685 640,490 695,685" />
+                            <polygon points="595,575 640,440 685,575" />
+                            <polygon points="840,685 895,510 950,685" />
+                            <polygon points="1180,685 1240,480 1300,685" />
+                            <polygon points="1195,565 1240,425 1285,565" />
+                            <polygon points="1310,685 1365,515 1420,685" />
+                        </g>
+                        <!-- Uzaktaki Küçük Kulübe Işığı -->
+                        <polygon points="1005,640 1045,610 1085,640 1085,685 1005,685" fill="#1e1b18" />
+                        <rect x="1035" y="645" width="20" height="20" rx="3" fill="#fde047" opacity="0.9" />
+                    </g>
+
+                    <!-- MEKAN C: ZEN VERANDA MANZARASI (PAGODA & BAMBU SİLÜETİ) -->
+                    <g class="env-layer env-zen">
+                        <!-- Uzak Pagoda Kulesi -->
+                        <g class="svg-transition" style="fill: var(--city-near)">
+                            <rect x="985" y="510" width="50" height="175" />
+                            <polygon points="945,560 1010,530 1075,560" />
+                            <polygon points="955,520 1010,492 1065,520" />
+                            <polygon points="970,482 1010,455 1050,482" />
+                            <line x1="1010" y1="425" x2="1010" y2="460" stroke="var(--city-near)" stroke-width="5" />
+                        </g>
+                        <!-- Bambu Gövdeleri ve Yaprakları -->
+                        <g stroke="#132a21" stroke-width="9" stroke-linecap="round">
+                            <line x1="510" y1="685" x2="535" y2="120" />
+                            <line x1="555" y1="685" x2="545" y2="160" />
+                            <line x1="1380" y1="685" x2="1360" y2="140" />
+                        </g>
+                        <!-- Sakura Dalı -->
+                        <path d="M420 160 Q560 190 660 140 Q720 120 770 165" fill="none" stroke="#2d1622" stroke-width="10" stroke-linecap="round" />
+                        <g fill="#f472b6" opacity="0.85">
+                            <circle cx="540" cy="172" r="11" />
+                            <circle cx="562" cy="182" r="9" />
+                            <circle cx="635" cy="152" r="12" />
+                            <circle cx="660" cy="140" r="10" />
+                            <circle cx="725" cy="145" r="11" />
+                            <circle cx="765" cy="165" r="9" />
+                        </g>
+                    </g>
+
+                    <!-- HTML5 CANVAS HAVA DURUMU (YAĞMUR, KAR TANELERİ & YILDIZLAR) -->
+                    <foreignObject x="420" y="65" width="1080" height="620">
+                        <canvas id="weather-canvas" width="1080" height="620" class="w-full h-full block pointer-events-none"></canvas>
+                    </foreignObject>
+
+                    <!-- Kış Modunda Pencere Altında Biriken Kar Katmanı -->
+                    <g class="svg-transition pointer-events-none" style="opacity: var(--snow-accumulation);" fill="#f8fafc">
+                        <path d="M420 685 Q520 652 640 672 Q770 690 910 658 Q1060 645 1210 670 Q1360 650 1500 675 L1500 690 L420 690 Z" opacity="0.92" />
+                    </g>
+                </g>
+
+                <!-- Pencere Çerçevesi ve Bölmeleri -->
+                <rect x="420" y="65" width="1080" height="620" rx="18" fill="none" class="svg-transition" style="stroke: var(--window-frame)" stroke-width="24" />
+                <line x1="780" y1="65" x2="780" y2="685" class="svg-transition" style="stroke: var(--window-frame)" stroke-width="15" />
+                <line x1="1140" y1="65" x2="1140" y2="685" class="svg-transition" style="stroke: var(--window-frame)" stroke-width="15" />
+                <line x1="420" y1="480" x2="1500" y2="480" class="svg-transition" style="stroke: var(--window-frame)" stroke-width="13" />
+                <rect x="395" y="677" width="1130" height="26" rx="8" class="svg-transition" style="fill: var(--wall-trim)" />
+            </g>
+
+            <!-- 3. MEKANA ÖZEL İÇ ODA DETAYLARI (ŞÖMİNE, KİTAPLIK, FENER) -->
+
+            <!-- MEKAN A İÇ DETAY: Şehir Kafesi Sol Kitaplık Rafı -->
+            <g class="env-layer env-cafe">
+                <rect x="95" y="290" width="235" height="16" rx="5" fill="#160d1c" />
+                <rect x="120" y="225" width="24" height="65" rx="3" fill="#e11d48" />
+                <rect x="148" y="238" width="22" height="52" rx="3" fill="#f59e0b" />
+                <rect x="174" y="218" width="28" height="72" rx="3" fill="#38bdf8" />
+                <rect x="215" y="242" width="48" height="48" rx="6" fill="#10b981" />
+                <rect x="95" y="450" width="235" height="16" rx="5" fill="#160d1c" />
+                <circle cx="155" cy="422" r="26" fill="#f59e0b" opacity="0.8" />
+                <rect x="210" y="395" width="75" height="55" rx="6" fill="#6366f1" />
+            </g>
+
+            <!-- MEKAN B İÇ DETAY: DAĞ EVİ İNTERAKTİF TAŞ ŞÖMİNE (TIKLANABİLİR ALAN) -->
+            <g id="fireplace-interactive" class="env-layer env-cabin scene-interactive" data-tooltip="🔥 Taş Şömine: Ateşi Harlamak İçin Tıkla!">
+                <!-- Şömine Oda Işık Yansıması -->
+                <circle id="fireplace-room-glow" cx="215" cy="585" r="260" fill="url(#fireplaceGlowGrad)" />
+                <!-- Taş Baca ve Gövde -->
+                <rect x="105" y="65" width="220" height="310" fill="#334155" stroke="#1e293b" stroke-width="6" />
+                <rect x="65" y="370" width="300" height="355" rx="10" fill="#475569" stroke="#1e293b" stroke-width="8" />
+                <!-- Ahşap Şömine Rafı (Mantel) -->
+                <rect x="45" y="355" width="340" height="28" rx="6" fill="#451a03" />
+                <!-- Şömine İç Ocağı -->
+                <path d="M115 725 L115 515 A100 95 0 0 1 315 515 L315 725 Z" fill="#090d16" stroke="#1e293b" stroke-width="8" />
+                <!-- Odunlar -->
+                <rect x="145" y="635" width="140" height="22" rx="10" transform="rotate(-12 215 645)" fill="#451a03" />
+                <rect x="145" y="635" width="140" height="22" rx="10" transform="rotate(14 215 645)" fill="#5c2406" />
+                <!-- Canlı SVG Alevler -->
+                <g id="svg-flames" class="fireplace-flames">
+                    <path d="M155 640 Q175 515 215 470 Q255 515 275 640 Z" fill="#ea580c" opacity="0.92" />
+                    <path d="M172 640 Q195 540 215 505 Q235 540 258 640 Z" fill="#f59e0b" opacity="0.95" />
+                    <path d="M190 640 Q205 575 215 545 Q225 575 240 640 Z" fill="#fef08a" />
+                </g>
+            </g>
+
+            <!-- MEKAN C İÇ DETAY: ZEN SHOJI PANELLERİ VE KAĞIT FENER -->
+            <g class="env-layer env-zen">
+                <!-- Sol Shoji Paravan -->
+                <rect x="75" y="95" width="265" height="630" fill="rgba(254, 243, 199, 0.08)" stroke="#292524" stroke-width="12" />
+                <line x1="207" y1="95" x2="207" y2="725" stroke="#292524" stroke-width="6" />
+                <line x1="75" y1="250" x2="340" y2="250" stroke="#292524" stroke-width="6" />
+                <line x1="75" y1="410" x2="340" y2="410" stroke="#292524" stroke-width="6" />
+                <line x1="75" y1="570" x2="340" y2="570" stroke="#292524" stroke-width="6" />
+                <!-- Sağ Üst Sallanan Kağıt Fener -->
+                <g class="zen-lantern">
+                    <line x1="1580" y1="0" x2="1580" y2="145" stroke="#292524" stroke-width="5" />
+                    <circle cx="1580" cy="195" r="65" fill="#fde047" opacity="0.22" style="filter: blur(14px);" />
+                    <ellipse cx="1580" cy="195" rx="46" ry="54" fill="#fb923c" stroke="#451a03" stroke-width="5" />
+                    <ellipse cx="1580" cy="195" rx="28" ry="52" fill="#fde047" opacity="0.65" />
+                </g>
+            </g>
+
+            <!-- Pencere Pervazında Küçük Sukulent -->
+            <g opacity="0.88">
+                <rect x="460" y="642" width="38" height="35" rx="6" fill="#d97757" />
+                <circle cx="479" cy="634" r="16" fill="#34d399" opacity="0.7" />
+                <circle cx="470" cy="638" r="11" fill="#10b981" opacity="0.8" />
+                <circle cx="489" cy="638" r="11" fill="#059669" opacity="0.8" />
+            </g>
+
+            <!-- 4. AHŞAP ÇALIŞMA MASASI (ÖN PLAN) -->
+            <g>
+                <polygon points="0,725 1920,725 1920,1080 0,1080" class="svg-transition" style="fill: var(--desk-top)" />
+                <rect x="0" y="725" width="1920" height="18" class="svg-transition" style="fill: var(--desk-edge)" />
+                <!-- SAĞDAKİ Lamba Açıkken Masaya Düşen Sıcak Işık Yansıması -->
+                <ellipse id="lamp-desk-glow" cx="1220" cy="855" rx="480" ry="145" fill="url(#deskSpotGrad)" />
+            </g>
+
+            <!-- 5. MASANIN SOLUNDA UYUYAN KEDİ (TIKLANABİLİR ALAN #2) -->
+            <g id="cozy-cat" class="scene-interactive" data-tooltip="🐾 Mırnav: Sevmek için tıkla (Mırıldanır)">
+                <ellipse cx="555" cy="868" rx="76" ry="22" fill="#7c2d12" opacity="0.75" />
+                <path id="cat-tail" d="M490 862 Q435 870 425 835" fill="none" stroke="#181926" stroke-width="13" stroke-linecap="round" />
+                <ellipse cx="550" cy="852" rx="56" ry="30" fill="#181926" />
+                <circle cx="598" cy="846" r="24" fill="#181926" />
+                <polygon points="580,830 588,808 600,826" fill="#181926" />
+                <polygon points="598,826 612,808 618,830" fill="#181926" />
+                <path d="M598 848 Q606 853 612 848" fill="none" stroke="#94a3b8" stroke-width="2.2" stroke-linecap="round" />
+                <!-- Sevince Çıkan Kalp -->
+                <text id="cat-heart" x="585" y="795" font-size="28" class="pointer-events-none">🧡</text>
+            </g>
+
+            <!-- 6. LAPTOP & MEKANİK KLAVYE (TIKLANABİLİR ALAN #3: HIZLI NOT DEFTERİ AÇAR) -->
+            <g id="laptop-interactive" class="scene-interactive" data-tooltip="💻 Laptop: Hızlı Not Defterini (Scratchpad) Açmak İçin Tıkla">
+                <rect x="690" y="835" width="520" height="145" rx="18" fill="rgba(15, 23, 42, 0.55)" />
+                <polygon points="780,850 1120,850 1160,884 740,884" fill="#334155" />
+                <rect x="795" y="640" width="310" height="212" rx="14" fill="#1e293b" stroke="#475569" stroke-width="4" />
+                <rect id="laptop-screen-glow" x="809" y="654" width="282" height="184" rx="8" fill="url(#screenGlowGrad)" opacity="0.85" />
+                <g fill="rgba(255,255,255,0.75)">
+                    <rect x="828" y="676" width="85" height="8" rx="4" />
+                    <rect x="846" y="696" width="140" height="8" rx="4" opacity="0.7" />
+                    <rect x="846" y="716" width="115" height="8" rx="4" opacity="0.7" />
+                    <rect x="828" y="736" width="65" height="8" rx="4" />
+                    <rect x="846" y="756" width="165" height="8" rx="4" fill="#fde047" />
+                    <rect x="828" y="776" width="105" height="8" rx="4" opacity="0.6" />
+                </g>
+                <polygon points="800,904 1100,904 1118,948 782,948" fill="#1e293b" stroke="#64748b" stroke-width="2" />
+                <line x1="790" y1="950" x2="1110" y2="950" stroke="#f59e0b" stroke-width="4" stroke-linecap="round" opacity="0.8" />
+            </g>
+
+            <!-- 7. SICAK KAHVE KUPASI (TIKLANABİLİR ALAN #4) -->
+            <g id="coffee-interactive" class="scene-interactive" data-tooltip="☕ Sıcak Kahve: Bir Yudum Al (Buharı Canlandırır)">
+                <g id="coffee-steam-group" fill="none" stroke="rgba(255,255,255,0.68)" stroke-width="4" stroke-linecap="round">
+                    <path class="steam-path" d="M1235 785 Q1225 760 1240 740 Q1255 720 1240 695" />
+                    <path class="steam-path" d="M1260 780 Q1275 755 1258 730 Q1245 710 1262 685" />
+                    <path class="steam-path" d="M1285 785 Q1275 765 1290 745 Q1300 725 1285 702" />
+                </g>
+                <ellipse cx="1260" cy="895" rx="62" ry="13" fill="#94a3b8" />
+                <path d="M1296 820 C1330 820 1330 872 1296 872" fill="none" class="svg-transition" style="stroke: var(--mug-body)" stroke-width="11" />
+                <rect x="1216" y="800" width="88" height="90" rx="18" class="svg-transition" style="fill: var(--mug-body)" />
+                <ellipse cx="1260" cy="804" rx="40" ry="9" fill="#3b1f14" />
+            </g>
+
+            <!-- 8. SAĞ TARAF MİMARİ MASA LAMBASI + ÇEKME İPİ VE ANAHTAR (TIKLANABİLİR ALAN #5) -->
+            <g id="lamp-interactive" class="scene-interactive" data-tooltip="💡 Masa Lambası & Anahtar: Işığı Aç / Kapat">
+                <polygon id="lamp-cone" points="1340,545 1405,535 1690,990 740,990" fill="url(#lampConeGrad)" />
+                <g id="lamp-pull-cord">
+                    <line x1="1392" y1="548" x2="1392" y2="624" stroke="#cbd5e1" stroke-width="3" stroke-dasharray="4 3" />
+                    <circle cx="1392" cy="630" r="9" fill="#f59e0b" stroke="#fef08a" stroke-width="2.5" />
+                </g>
+                <ellipse cx="1510" cy="895" rx="74" ry="19" fill="#1e293b" stroke="#475569" stroke-width="3.5" />
+                <rect id="lamp-base-switch" x="1494" y="882" width="32" height="12" rx="6" fill="#f59e0b" stroke="#fef08a" stroke-width="1.5" />
+                <line x1="1510" y1="885" x2="1575" y2="655" stroke="#475569" stroke-width="14" stroke-linecap="round" />
+                <circle cx="1575" cy="655" r="14" fill="#f59e0b" />
+                <line x1="1575" y1="655" x2="1395" y2="505" stroke="#475569" stroke-width="12" stroke-linecap="round" />
+                <circle cx="1395" cy="505" r="11" fill="#f59e0b" />
+                <circle id="lamp-bulb-glow" cx="1355" cy="545" r="30" fill="#fef08a" style="filter: blur(9px);" />
+                <polygon points="1415,498 1365,478 1310,542 1405,558" fill="#1e293b" stroke="#64748b" stroke-width="3.5" stroke-linejoin="round" />
+            </g>
+        </svg>
+
+        <!-- Genel Atmosferik Renk ve Lamba Loşluk Filtresi -->
+        <div id="room-darkness-overlay" class="fixed inset-0 pointer-events-none"></div>
+        <div class="fixed inset-0 pointer-events-none transition-colors duration-1000" style="background: var(--ambient-overlay);"></div>
+
+        <!-- ==========================================================
+             KATMAN 2: YÜZEN BİLGİ BALONCUĞU (TOOLTIP) VE TOAST MESAJI
+             ========================================================== -->
+        <div id="scene-tooltip" class="hidden md:block fixed pointer-events-none opacity-0 transition-opacity duration-200 z-40 px-3.5 py-2 rounded-xl text-xs font-medium text-amber-100 bg-slate-950/90 border border-white/15 backdrop-blur-md shadow-xl">
+            İpucu
+        </div>
+
+        <div id="cozy-toast" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 pointer-events-none opacity-0 -translate-y-3 transition-all duration-300 px-4 py-2 rounded-full glass-panel text-xs sm:text-sm font-medium text-amber-200 flex items-center gap-2 shadow-2xl max-w-[90vw] text-center">
+            <span id="toast-icon">☕</span>
+            <span id="toast-text" class="truncate">Sıcak kahveden bir yudum aldın...</span>
+        </div>
+
+        <!-- ==========================================================
+             KATMAN 3: ÜST DURUM ÇUBUĞU (RESPONSIVE TOP BAR + MEKAN SEÇİCİ)
+             ========================================================== -->
+        <header class="ui-layer fixed top-3 sm:top-5 left-3 sm:left-6 right-3 sm:right-6 z-30 flex flex-wrap items-center justify-between gap-2">
+            <!-- Sol: Logo, Mekan Seçici ve Mevsim/Zaman Rozeti -->
+            <div class="glass-panel top-bar-pill px-3 sm:px-4 py-2 rounded-2xl flex items-center gap-2 sm:gap-3.5 max-w-full overflow-x-auto">
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    <span class="text-lg sm:text-xl">☕</span>
+                    <div class="hidden sm:block">
+                        <h1 class="text-xs sm:text-sm font-bold tracking-tight text-white leading-none">Digital Cozy Café</h1>
+                        <p class="text-[10px] text-slate-400 mt-0.5">İnteraktif Çalışma & Huzur Alanı</p>
+                    </div>
+                </div>
+
+                <div class="h-5 w-px bg-white/10 hidden sm:block"></div>
+
+                <!-- 3'lü Mekan (Environment) Seçici -->
+                <div class="flex items-center bg-black/35 p-1 rounded-xl border border-white/10 gap-1 flex-shrink-0">
+                    <button class="env-btn px-2 sm:px-2.5 py-1 rounded-lg text-[11px] font-medium bg-amber-500 text-slate-950 transition flex items-center gap-1" data-env="cafe" title="Şehir Kafesi">
+                        <span>🏙️</span> <span class="hidden md:inline">Kafe</span>
+                    </button>
+                    <button class="env-btn px-2 sm:px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-300 hover:text-white transition flex items-center gap-1" data-env="cabin" title="Şömineli Dağ Evi">
+                        <span>🪵</span> <span class="hidden md:inline">Dağ Evi</span>
+                    </button>
+                    <button class="env-btn px-2 sm:px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-300 hover:text-white transition flex items-center gap-1" data-env="zen" title="Zen Veranda">
+                        <span>⛩️</span> <span class="hidden md:inline">Zen</span>
+                    </button>
+                </div>
+
+                <!-- Tıklanabilir Mevsim & Zaman Rozeti (Kış Dahil) -->
+                <button id="theme-badge-btn" class="px-2.5 py-1 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] sm:text-xs font-medium text-amber-200 flex items-center gap-1.5 transition flex-shrink-0" title="Zamanı / Mevsimi Değiştir">
+                    <span id="theme-badge-icon">🌅</span>
+                    <span id="theme-badge-text">Gün Batımı</span>
+                </button>
+
+                <div id="live-clock" class="mono text-xs font-semibold text-slate-200 hidden lg:block">
+                    00:00
+                </div>
+            </div>
+
+            <!-- Sağ: Hızlı Kontroller -->
+            <div class="glass-panel top-bar-pill px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-2xl flex items-center gap-1.5 sm:gap-2 ml-auto">
+                <button id="top-lamp-btn" class="px-2.5 py-1.5 rounded-xl bg-amber-500/20 border border-amber-400/30 text-amber-200 text-xs font-medium flex items-center gap-1.5 hover:bg-amber-500/30 transition" title="Masa Lambasını Aç / Kapat">
+                    <span>💡</span>
+                    <span id="top-lamp-text" class="hidden md:inline">Lamba Açık</span>
+                </button>
+
+                <div id="active-sound-pill" class="hidden sm:flex px-2.5 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-400/20 text-[11px] text-emerald-300 items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span id="active-sound-status">Hazır</span>
+                </div>
+
+                <button id="master-mute-btn" class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 flex items-center justify-center text-sm sm:text-base transition" title="Tüm Sesleri Sustur / Aç">
+                    🔊
+                </button>
+
+                <button id="fullscreen-btn" class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white/5 hover:bg-white/15 border border-white/10 flex items-center justify-center text-xs sm:text-sm transition" title="Tam Ekran">
+                    ⛶
+                </button>
+            </div>
+        </header>
+
+        <!-- ==========================================================
+             KATMAN 4: KENARLARA YASLI (MOBİLDE BOTTOM-SHEET) YÜZEN PANELLER
+             ========================================================== -->
+        <div class="ui-layer fixed inset-0 z-30">
+
+            <!-- SOL PANEL: 6 KANALLI STÜDYO MİKSERİ -->
+            <section id="panel-mixer" class="glass-panel floating-side-panel active fixed left-5 top-20 w-[305px] max-h-[calc(100vh-170px)] overflow-y-auto rounded-3xl p-4 sm:p-5 text-slate-100">
+                <div class="flex items-center justify-between mb-3">
+                    <div>
+                        <h2 class="text-sm font-bold flex items-center gap-2">
+                            <span>🎛️</span> Stüdyo Mikseri
+                        </h2>
+                        <p class="text-[11px] text-slate-400">6 Kanallı Canlı Ses Sentezleyici</p>
+                    </div>
+                    <button data-close="panel-mixer" class="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/15 text-slate-300 text-xs flex items-center justify-center transition" title="Paneli Kapat">✕</button>
+                </div>
+
+                <!-- Hızlı Atmosfer Presetleri -->
+                <div class="grid grid-cols-2 gap-1.5 mb-3.5 p-1.5 rounded-2xl bg-black/35 border border-white/5">
+                    <button class="preset-btn px-2 py-1.5 rounded-xl text-[11px] font-medium text-slate-300 hover:text-white hover:bg-white/10 transition text-left flex items-center gap-1.5" data-preset="coding">
+                        <span>💻</span> <span>Derin Kodlama</span>
+                    </button>
+                    <button class="preset-btn px-2 py-1.5 rounded-xl text-[11px] font-medium text-slate-300 hover:text-white hover:bg-white/10 transition text-left flex items-center gap-1.5" data-preset="winterCabin">
+                        <span>🪵</span> <span>Dağ Evi Kış</span>
+                    </button>
+                    <button class="preset-btn px-2 py-1.5 rounded-xl text-[11px] font-medium text-slate-300 hover:text-white hover:bg-white/10 transition text-left flex items-center gap-1.5" data-preset="cozy">
+                        <span>☕</span> <span>Yağmurlu Kafe</span>
+                    </button>
+                    <button class="preset-btn px-2 py-1.5 rounded-xl text-[11px] font-medium text-rose-300 hover:bg-rose-500/20 transition text-left flex items-center gap-1.5" data-preset="reset">
+                        <span>🔇</span> <span>Sıfırla</span>
+                    </button>
+                </div>
+
+                <!-- 6 Ses Kanalı -->
+                <div class="space-y-3">
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="font-medium text-slate-200">🌧️ Sağanak Yağmur</span>
+                            <span id="val-rain" class="mono text-[11px] text-amber-300">0%</span>
+                        </div>
+                        <input type="range" class="cozy-slider sound-slider" data-channel="rain" min="0" max="1" step="0.01" value="0">
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="font-medium text-slate-200">🔥 Şömine & Çıtırtı</span>
+                            <span id="val-fire" class="mono text-[11px] text-amber-300">0%</span>
+                        </div>
+                        <input type="range" class="cozy-slider sound-slider" data-channel="fire" min="0" max="1" step="0.01" value="0">
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="font-medium text-slate-200">❄️ Kış Rüzgarı / Tipi</span>
+                            <span id="val-wind" class="mono text-[11px] text-sky-300">0%</span>
+                        </div>
+                        <input type="range" class="cozy-slider sound-slider" data-channel="wind" min="0" max="1" step="0.01" value="0">
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="font-medium text-slate-200">⌨️ Mekanik Klavye</span>
+                            <span id="val-keyboard" class="mono text-[11px] text-amber-300">0%</span>
+                        </div>
+                        <input type="range" class="cozy-slider sound-slider" data-channel="keyboard" min="0" max="1" step="0.01" value="0">
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="font-medium text-slate-200">🎹 Lo-Fi Caz Akorlar</span>
+                            <span id="val-lofi" class="mono text-[11px] text-amber-300">0%</span>
+                        </div>
+                        <input type="range" class="cozy-slider sound-slider" data-channel="lofi" min="0" max="1" step="0.01" value="0">
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="font-medium text-slate-200">🧠 Alpha Dalgası (10Hz)</span>
+                            <span id="val-binaural" class="mono text-[11px] text-amber-300">0%</span>
+                        </div>
+                        <input type="range" class="cozy-slider sound-slider" data-channel="binaural" min="0" max="1" step="0.01" value="0">
+                    </div>
+                </div>
+            </section>
+
+            <!-- SAĞ PANEL: ODAK SAYACI & MİNİ GÖREVLER -->
+            <section id="panel-focus" class="glass-panel floating-side-panel active fixed right-5 top-20 w-[305px] max-h-[calc(100vh-170px)] overflow-y-auto rounded-3xl p-4 sm:p-5 text-slate-100">
+                <div class="flex items-center justify-between mb-3">
+                    <div>
+                        <h2 class="text-sm font-bold flex items-center gap-2">
+                            <span>⏱️</span> Odak & Görevler
+                        </h2>
+                        <p id="pomo-session-text" class="text-[11px] text-slate-400">Derin Çalışma Oturumu</p>
+                    </div>
+                    <button data-close="panel-focus" class="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/15 text-slate-300 text-xs flex items-center justify-center transition" title="Paneli Kapat">✕</button>
+                </div>
+
+                <!-- Mod Seçici (25dk / 5dk / 15dk) -->
+                <div class="grid grid-cols-3 gap-1 p-1 rounded-xl bg-black/35 border border-white/5 mb-3">
+                    <button class="pomo-mode-btn py-1.5 rounded-lg text-[11px] font-medium bg-white/15 text-white transition" data-minutes="25" data-label="Derin Çalışma Oturumu">
+                        25dk Odak
+                    </button>
+                    <button class="pomo-mode-btn py-1.5 rounded-lg text-[11px] font-medium text-slate-400 hover:text-white transition" data-minutes="5" data-label="Kısa Kahve Molası">
+                        5dk Mola
+                    </button>
+                    <button class="pomo-mode-btn py-1.5 rounded-lg text-[11px] font-medium text-slate-400 hover:text-white transition" data-minutes="15" data-label="Uzun Dinlenme Molası">
+                        15dk Dinlen
+                    </button>
+                </div>
+
+                <!-- Kompakt Sayaç Halkası + Kontroller -->
+                <div class="flex items-center justify-between gap-3 bg-black/25 border border-white/5 rounded-2xl p-3 mb-4">
+                    <div class="relative w-20 h-20 flex-shrink-0 flex items-center justify-center">
+                        <svg class="w-full h-full -rotate-90" viewBox="0 0 120 120">
+                            <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="9" />
+                            <circle id="pomo-ring" cx="60" cy="60" r="52" fill="none" stroke="var(--accent)" stroke-width="9"
+                                    stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="0"
+                                    class="transition-all duration-500" />
+                        </svg>
+                        <span id="pomo-display" class="absolute mono text-lg font-bold text-white">25:00</span>
+                    </div>
+
+                    <div class="flex-1 flex flex-col gap-1.5">
+                        <div id="pomo-count-badge" class="text-[11px] text-amber-300 font-medium">🍅 0 Oturum Bitti</div>
+                        <div class="flex gap-1.5">
+                            <button id="pomo-start-btn" class="flex-1 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs transition">
+                                Başlat
+                            </button>
+                            <button id="pomo-reset-btn" class="px-2.5 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-slate-200 text-xs transition">
+                                ↺
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="h-px w-full bg-white/10 my-3"></div>
+
+                <!-- Mini Görev Listesi -->
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-semibold text-slate-200">📝 Yapılacaklar</span>
+                        <span id="dock-todo-count" class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] mono">0</span>
+                    </div>
+
+                    <form id="todo-form" class="flex gap-1.5 mb-2.5">
+                        <input type="text" id="todo-input" placeholder="Yeni görev yaz..." required
+                               class="flex-1 px-3 py-1.5 rounded-xl bg-black/35 border border-white/15 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-amber-400">
+                        <button type="submit" class="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition">
+                            +
+                        </button>
+                    </form>
+
+                    <ul id="todo-list" class="space-y-1.5 max-h-36 overflow-y-auto pr-1"></ul>
+                </div>
+            </section>
+
+            <!-- ORTA / YÜZEN HIZLI NOT DEFTERİ (LAPTOPA VEYA DOCK'A TIKLAYINCA AÇILIR) -->
+            <section id="panel-notes" class="glass-panel floating-side-panel panel-hidden fixed left-1/2 -translate-x-1/2 top-24 w-[340px] rounded-3xl p-5 text-slate-100 z-40">
+                <div class="flex items-center justify-between mb-2.5">
+                    <div>
+                        <h2 class="text-sm font-bold flex items-center gap-2">
+                            <span>📓</span> Hızlı Not Defteri
+                        </h2>
+                        <p class="text-[11px] text-slate-400">Otomatik olarak tarayıcıya kaydedilir</p>
+                    </div>
+                    <button data-close="panel-notes" class="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/15 text-slate-300 text-xs flex items-center justify-center transition" title="Kapat">✕</button>
+                </div>
+                <textarea id="scratchpad-area" rows="6" placeholder="Aklına gelen fikirleri, kod notlarını veya düşüncelerini buraya bırak..."
+                          class="w-full p-3 rounded-2xl bg-black/40 border border-white/15 text-xs text-slate-100 placeholder-slate-400 focus:outline-none focus:border-amber-400 resize-none leading-relaxed"></textarea>
+            </section>
+
+        </div>
+
+        <!-- ==========================================================
+             KATMAN 5: ALT MACOS TARZI YÜZEN DOCK (RESPONSIVE)
+             ========================================================== -->
+        <nav class="bottom-dock fixed bottom-4 sm:bottom-5 left-1/2 -translate-x-1/2 z-30 glass-panel px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-2xl flex items-center gap-1.5 sm:gap-2 shadow-2xl max-w-[95vw] overflow-x-auto">
+            <button data-target="panel-mixer" class="dock-btn px-3 py-2 rounded-xl bg-white/15 text-white border border-white/15 text-xs font-medium flex items-center gap-1.5 transition hover:bg-white/20 flex-shrink-0">
+                <span>🎛️</span>
+                <span>Mikser</span>
+            </button>
+
+            <button data-target="panel-focus" class="dock-btn px-3 py-2 rounded-xl bg-white/15 text-white border border-white/15 text-xs font-medium flex items-center gap-1.5 transition hover:bg-white/20 flex-shrink-0">
+                <span>⏱️</span>
+                <span>Odak & Görev</span>
+            </button>
+
+            <button data-target="panel-notes" class="dock-btn px-3 py-2 rounded-xl bg-transparent text-slate-400 border border-transparent text-xs font-medium flex items-center gap-1.5 transition hover:bg-white/20 flex-shrink-0">
+                <span>📓</span>
+                <span>Notlar</span>
+            </button>
+
+            <div class="h-5 w-px bg-white/10 mx-0.5 flex-shrink-0"></div>
+
+            <!-- Sahneyi Tamamen Temizleme (Sinema Modu) Butonu -->
+            <button id="zen-view-btn" class="px-3 py-2 rounded-xl bg-transparent text-slate-300 hover:bg-white/10 hover:text-amber-200 text-xs font-medium flex items-center gap-1.5 transition flex-shrink-0" title="Tüm Panelleri Gizle">
+                <span>✨</span>
+                <span class="hidden sm:inline">Sadece Manzara</span>
+            </button>
+        </nav>
+
+    </div>
+
+    <!-- ==========================================================
+         UYGULAMA MOTORU (6 KANALLI SES, YAĞMUR/KAR CANVAS, MEKANLAR)
+         ========================================================== -->
+    <script>
+        /* ==========================================
+           1. PROSEDÜREL WEB AUDIO SYNTH MOTORU (6 KANAL)
+           ========================================== */
+        class CozySoundEngine {
+            constructor() {
+                this.ctx = null;
+                this.masterGain = null;
+                this.isMuted = false;
+                this.channels = {
+                    rain: { gain: null, value: 0 },
+                    fire: { gain: null, value: 0 },
+                    wind: { gain: null, value: 0 },
+                    keyboard: { gain: null, value: 0 },
+                    lofi: { gain: null, value: 0 },
+                    binaural: { gain: null, value: 0 }
+                };
+            }
+
+            init() {
+                if (this.ctx) {
+                    if (this.ctx.state === 'suspended') this.ctx.resume();
+                    return;
+                }
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                this.ctx = new AudioCtx();
+
+                this.masterGain = this.ctx.createGain();
+                this.masterGain.gain.value = this.isMuted ? 0 : 1;
+                this.masterGain.connect(this.ctx.destination);
+
+                Object.keys(this.channels).forEach(key => {
+                    const g = this.ctx.createGain();
+                    g.gain.value = this.channels[key].value;
+                    g.connect(this.masterGain);
+                    this.channels[key].gain = g;
+                });
+
+                this.setupRainChannel();
+                this.setupFireChannel();
+                this.setupWinterWindChannel();
+                this.setupKeyboardChannel();
+                this.setupLofiChordsChannel();
+                this.setupBinauralChannel();
+            }
+
+            // 1. YAĞMUR: Pembe Gürültü + Lowpass Filtre
+            setupRainChannel() {
+                const bufferSize = this.ctx.sampleRate * 3;
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+
+                for (let i = 0; i < bufferSize; i++) {
+                    const white = Math.random() * 2 - 1;
+                    b0 = 0.99886 * b0 + white * 0.0555179;
+                    b1 = 0.99332 * b1 + white * 0.0750759;
+                    b2 = 0.96900 * b2 + white * 0.1538520;
+                    b3 = 0.86650 * b3 + white * 0.3104856;
+                    b4 = 0.55000 * b4 + white * 0.5329522;
+                    b5 = -0.7616 * b5 - white * 0.0168980;
+                    data[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.045;
+                    b6 = white * 0.115926;
+                }
+
+                const src = this.ctx.createBufferSource();
+                src.buffer = buffer;
+                src.loop = true;
+
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.value = 1350;
+
+                src.connect(filter);
+                filter.connect(this.channels.rain.gain);
+                src.start();
+            }
+
+            // 2. ŞÖMİNE: Brown Noise + Rastgele Ateş Çıtırtıları
+            setupFireChannel() {
+                const bufferSize = this.ctx.sampleRate * 4;
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                let lastOut = 0.0;
+
+                for (let i = 0; i < bufferSize; i++) {
+                    const white = Math.random() * 2 - 1;
+                    lastOut = (lastOut + (0.02 * white)) / 1.02;
+                    const crackle = Math.random() > 0.9991 ? (Math.random() * 2 - 1) * 0.85 : 0;
+                    data[i] = (lastOut * 2.4) + crackle;
+                }
+
+                const src = this.ctx.createBufferSource();
+                src.buffer = buffer;
+                src.loop = true;
+                src.connect(this.channels.fire.gain);
+                src.start();
+            }
+
+            // 3. KIŞ RÜZGARI / TİPİ: LFO Modülasyonlu Bandpass Uğultusu
+            setupWinterWindChannel() {
+                const bufferSize = this.ctx.sampleRate * 4;
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = (Math.random() * 2 - 1) * 0.35;
+                }
+
+                const src = this.ctx.createBufferSource();
+                src.buffer = buffer;
+                src.loop = true;
+
+                const windFilter = this.ctx.createBiquadFilter();
+                windFilter.type = 'bandpass';
+                windFilter.frequency.value = 320;
+                windFilter.Q.value = 4.5;
+
+                // Rüzgarın yavaşça esip alçalmasını sağlayan LFO
+                const lfo = this.ctx.createOscillator();
+                const lfoGain = this.ctx.createGain();
+                lfo.type = 'sine';
+                lfo.frequency.value = 0.16; // 6 saniyede bir esinti dalgası
+                lfoGain.gain.value = 180;
+
+                lfo.connect(lfoGain);
+                lfoGain.connect(windFilter.frequency);
+
+                src.connect(windFilter);
+                windFilter.connect(this.channels.wind.gain);
+
+                src.start();
+                lfo.start();
+            }
+
+            // 4. MEKANİK KLAVYE
+            setupKeyboardChannel() {
+                const triggerKeystroke = () => {
+                    if (this.ctx && this.channels.keyboard.value > 0.01 && !this.isMuted) {
+                        const now = this.ctx.currentTime;
+                        const osc = this.ctx.createOscillator();
+                        const clickGain = this.ctx.createGain();
+
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(190 + Math.random() * 90, now);
+                        osc.frequency.exponentialRampToValueAtTime(45, now + 0.032);
+
+                        clickGain.gain.setValueAtTime(0.38, now);
+                        clickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.032);
+
+                        osc.connect(clickGain);
+                        clickGain.connect(this.channels.keyboard.gain);
+
+                        osc.start(now);
+                        osc.stop(now + 0.038);
+                    }
+                    const nextDelay = Math.random() > 0.84 ? 420 + Math.random() * 520 : 70 + Math.random() * 125;
+                    setTimeout(triggerKeystroke, nextDelay);
+                };
+                triggerKeystroke();
+            }
+
+            // 5. LO-FI RHODES AKORLAR
+            setupLofiChordsChannel() {
+                const chords = [
+                    [261.63, 329.63, 392.00, 493.88],
+                    [220.00, 261.63, 329.63, 392.00],
+                    [174.61, 220.00, 261.63, 329.63],
+                    [196.00, 246.94, 293.66, 349.23]
+                ];
+                let idx = 0;
+
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.value = 540;
+                filter.connect(this.channels.lofi.gain);
+
+                const playChordLoop = () => {
+                    if (this.ctx && this.channels.lofi.value > 0.01 && !this.isMuted) {
+                        const now = this.ctx.currentTime;
+                        chords[idx].forEach(freq => {
+                            const osc = this.ctx.createOscillator();
+                            const noteGain = this.ctx.createGain();
+
+                            osc.type = 'sine';
+                            osc.detune.value = (Math.random() - 0.5) * 14;
+                            osc.frequency.value = freq;
+
+                            noteGain.gain.setValueAtTime(0.001, now);
+                            noteGain.gain.linearRampToValueAtTime(0.085, now + 1.1);
+                            noteGain.gain.exponentialRampToValueAtTime(0.0008, now + 4.2);
+
+                            osc.connect(noteGain);
+                            noteGain.connect(filter);
+
+                            osc.start(now);
+                            osc.stop(now + 4.3);
+                        });
+                        idx = (idx + 1) % chords.length;
+                    }
+                    setTimeout(playChordLoop, 4000);
+                };
+                playChordLoop();
+            }
+
+            // 6. BINAURAL ALPHA DALGASI (10Hz)
+            setupBinauralChannel() {
+                const merger = this.ctx.createChannelMerger(2);
+                const leftOsc = this.ctx.createOscillator();
+                const rightOsc = this.ctx.createOscillator();
+                const subGain = this.ctx.createGain();
+
+                leftOsc.frequency.value = 200;
+                rightOsc.frequency.value = 210;
+                subGain.gain.value = 0.14;
+
+                leftOsc.connect(merger, 0, 0);
+                rightOsc.connect(merger, 0, 1);
+                merger.connect(subGain);
+                subGain.connect(this.channels.binaural.gain);
+
+                leftOsc.start();
+                rightOsc.start();
+            }
+
+            setChannelVolume(channel, value) {
+                this.init();
+                if (!this.channels[channel]) return;
+                this.channels[channel].value = value;
+                this.channels[channel].gain.gain.setTargetAtTime(value, this.ctx.currentTime, 0.08);
+            }
+
+            toggleMasterMute() {
+                this.init();
+                this.isMuted = !this.isMuted;
+                this.masterGain.gain.setTargetAtTime(this.isMuted ? 0 : 1, this.ctx.currentTime, 0.08);
+                return this.isMuted;
+            }
+
+            playPorcelainClink() {
+                this.init();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const g = this.ctx.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(1480, now);
+                osc.frequency.exponentialRampToValueAtTime(1920, now + 0.07);
+
+                g.gain.setValueAtTime(0.16, now);
+                g.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+
+                osc.connect(g);
+                g.connect(this.masterGain);
+                osc.start(now);
+                osc.stop(now + 0.46);
+            }
+
+            playLampSwitch() {
+                this.init();
+                const now = this.ctx.currentTime;
+
+                const click1 = this.ctx.createOscillator();
+                const g1 = this.ctx.createGain();
+                click1.type = 'triangle';
+                click1.frequency.setValueAtTime(420, now);
+                click1.frequency.exponentialRampToValueAtTime(110, now + 0.025);
+                g1.gain.setValueAtTime(0.25, now);
+                g1.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+                click1.connect(g1);
+                g1.connect(this.masterGain);
+                click1.start(now);
+                click1.stop(now + 0.032);
+
+                const click2 = this.ctx.createOscillator();
+                const g2 = this.ctx.createGain();
+                click2.type = 'sine';
+                click2.frequency.setValueAtTime(260, now + 0.035);
+                click2.frequency.exponentialRampToValueAtTime(85, now + 0.07);
+                g2.gain.setValueAtTime(0.18, now + 0.035);
+                g2.gain.exponentialRampToValueAtTime(0.001, now + 0.075);
+                click2.connect(g2);
+                g2.connect(this.masterGain);
+                click2.start(now + 0.035);
+                click2.stop(now + 0.08);
+            }
+
+            playCatPurr() {
+                this.init();
+                const now = this.ctx.currentTime;
+                const carrier = this.ctx.createOscillator();
+                const lfo = this.ctx.createOscillator();
+                const lfoGain = this.ctx.createGain();
+                const mainGain = this.ctx.createGain();
+
+                carrier.type = 'triangle';
+                carrier.frequency.setValueAtTime(58, now);
+                carrier.frequency.linearRampToValueAtTime(68, now + 0.7);
+                carrier.frequency.linearRampToValueAtTime(52, now + 1.5);
+
+                lfo.frequency.value = 24;
+                lfoGain.gain.value = 18;
+
+                mainGain.gain.setValueAtTime(0.001, now);
+                mainGain.gain.linearRampToValueAtTime(0.18, now + 0.25);
+                mainGain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
+
+                lfo.connect(lfoGain);
+                lfoGain.connect(carrier.frequency);
+                carrier.connect(mainGain);
+                mainGain.connect(this.masterGain);
+
+                carrier.start(now);
+                lfo.start(now);
+                carrier.stop(now + 1.55);
+                lfo.stop(now + 1.55);
+            }
+
+            // Şömineye Tıklayınca Odun Çıtırtısı (Fire Burst)
+            playFireStoke() {
+                this.init();
+                const now = this.ctx.currentTime;
+                for (let i = 0; i < 4; i++) {
+                    const offset = i * 0.06 + Math.random() * 0.04;
+                    const osc = this.ctx.createOscillator();
+                    const g = this.ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(140 + Math.random() * 180, now + offset);
+                    osc.frequency.exponentialRampToValueAtTime(45, now + offset + 0.05);
+                    g.gain.setValueAtTime(0.18, now + offset);
+                    g.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.055);
+                    osc.connect(g);
+                    g.connect(this.masterGain);
+                    osc.start(now + offset);
+                    osc.stop(now + offset + 0.06);
+                }
+            }
+        }
+
+        const soundEngine = new CozySoundEngine();
+
+        /* ==========================================
+           2. PENCERE İÇİ HTML5 CANVAS HAVA, YAĞMUR & KAR TANELERİ MOTORU
+           ========================================== */
+        const weatherCanvas = document.getElementById('weather-canvas');
+        const wCtx = weatherCanvas.getContext('2d');
+        let rainIntensity = 0;
+        let windIntensity = 0;
+
+        const stars = Array.from({ length: 75 }, () => ({
+            x: Math.random() * 1080,
+            y: Math.random() * 410,
+            r: Math.random() * 1.8 + 0.5,
+            phase: Math.random() * Math.PI * 2,
+            speed: 0.015 + Math.random() * 0.03
+        }));
+
+        const raindrops = Array.from({ length: 220 }, () => ({
+            x: Math.random() * 1080,
+            y: Math.random() * 620,
+            len: 16 + Math.random() * 20,
+            speed: 11 + Math.random() * 10
+        }));
+
+        const snowflakes = Array.from({ length: 160 }, () => ({
+            x: Math.random() * 1080,
+            y: Math.random() * 620,
+            r: 1.5 + Math.random() * 3.2,
+            speedY: 0.8 + Math.random() * 1.6,
+            swayPhase: Math.random() * Math.PI * 2,
+            swaySpeed: 0.015 + Math.random() * 0.025
+        }));
+
+        function renderWeatherCanvas() {
+            wCtx.clearRect(0, 0, 1080, 620);
+            const currentTheme = document.body.getAttribute('data-theme');
+
+            // Gece, Gün Batımı ve Kış Modunda Yıldızlar
+            if (currentTheme !== 'day') {
+                const starBaseAlpha = currentTheme === 'night' ? 0.88 : (currentTheme === 'winter' ? 0.5 : 0.32);
+                stars.forEach(s => {
+                    s.phase += s.speed;
+                    const alpha = (0.35 + Math.sin(s.phase) * 0.65) * starBaseAlpha * (1 - rainIntensity * 0.7);
+                    if (alpha > 0.02) {
+                        wCtx.fillStyle = `rgba(255, 250, 220, ${alpha})`;
+                        wCtx.beginPath();
+                        wCtx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                        wCtx.fill();
+                    }
+                });
+            }
+
+            // Kış Teması Aktifse veya Rüzgar/Tipi Sesi Açıksa: Kar Taneleri Yağdır
+            const snowFactor = currentTheme === 'winter' ? Math.max(0.65, windIntensity) : windIntensity;
+            if (snowFactor > 0.02) {
+                const activeFlakes = Math.floor(snowFactor * snowflakes.length);
+                wCtx.fillStyle = 'rgba(248, 250, 252, 0.88)';
+
+                for (let i = 0; i < activeFlakes; i++) {
+                    const f = snowflakes[i];
+                    f.swayPhase += f.swaySpeed;
+                    const windDrift = Math.sin(f.swayPhase) * 0.9 + (windIntensity * 2.8);
+
+                    wCtx.beginPath();
+                    wCtx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+                    wCtx.fill();
+
+                    f.y += f.speedY * (0.85 + snowFactor * 0.6);
+                    f.x += windDrift;
+
+                    if (f.y > 625) { f.y = -10; f.x = Math.random() * 1080; }
+                    if (f.x > 1090) f.x = -10;
+                    if (f.x < -10) f.x = 1085;
+                }
+            }
+
+            // Yağmur Sesi Açıksa: Yağmur Damlaları
+            if (rainIntensity > 0.01) {
+                const activeDrops = Math.floor(rainIntensity * raindrops.length);
+                wCtx.strokeStyle = `rgba(200, 230, 255, ${0.24 + rainIntensity * 0.38})`;
+                wCtx.lineWidth = 1.6;
+                wCtx.lineCap = 'round';
+
+                for (let i = 0; i < activeDrops; i++) {
+                    const d = raindrops[i];
+                    wCtx.beginPath();
+                    wCtx.moveTo(d.x, d.y);
+                    wCtx.lineTo(d.x - 3 - windIntensity * 4, d.y + d.len);
+                    wCtx.stroke();
+
+                    d.y += d.speed * (0.75 + rainIntensity * 0.65);
+                    d.x -= (1.5 + windIntensity * 2);
+
+                    if (d.y > 620) {
+                        d.y = -25;
+                        d.x = Math.random() * 1120;
+                    }
+                }
+            }
+
+            requestAnimationFrame(renderWeatherCanvas);
+        }
+        renderWeatherCanvas();
+
+        /* ==========================================
+           3. MEKAN (ENVIRONMENT), TEMA VE OBJE ETKİLEŞİMLERİ
+           ========================================== */
+        const THEMES = [
+            { id: 'sunset', icon: '🌅', label: 'Gün Batımı' },
+            { id: 'night',  icon: '🌙', label: 'Gece Vardiyası' },
+            { id: 'winter', icon: '❄️', label: 'Kış & Kar' },
+            { id: 'day',    icon: '☀️', label: 'Aydınlık Sabah' }
+        ];
+        let currentThemeIdx = 0;
+
+        const COFFEE_MESSAGES = [
+            'Sıcak kahveden bir yudum aldın. Derin bir nefes al...',
+            'Harika gidiyorsun, acele etmene hiç gerek yok.',
+            'Taze çekilmiş kahve kokusu bütün odayı sardı.',
+            'Omuzlarını gevşet ve anın tadını çıkar.'
+        ];
+
+        function showCozyToast(icon, text) {
+            const toast = document.getElementById('cozy-toast');
+            document.getElementById('toast-icon').textContent = icon;
+            document.getElementById('toast-text').textContent = text;
+            toast.classList.remove('opacity-0', '-translate-y-3');
+            toast.classList.add('opacity-100', 'translate-y-0');
+
+            clearTimeout(window.toastTimeout);
+            window.toastTimeout = setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', '-translate-y-3');
+            }, 3000);
+        }
+
+        // Mekan Değiştirici (Şehir Kafesi / Dağ Evi / Zen Veranda)
+        const envButtons = document.querySelectorAll('.env-btn');
+        function applyEnvironment(envId, notify = false) {
+            document.body.setAttribute('data-env', envId);
+            envButtons.forEach(btn => {
+                const active = btn.dataset.env === envId;
+                btn.classList.toggle('bg-amber-500', active);
+                btn.classList.toggle('text-slate-950', active);
+                btn.classList.toggle('text-slate-300', !active);
+            });
+            localStorage.setItem('cozy_env', envId);
+
+            if (notify) {
+                const labels = {
+                    cafe: '🏙️ Şehir Kafesi ortamına geçildi.',
+                    cabin: '🪵 Şömineli Dağ Evi ortamına geçildi. Soldaki şömineye tıklayabilirsin!',
+                    zen: '⛩️ Zen Veranda ortamına geçildi.'
+                };
+                showCozyToast('✨', labels[envId]);
+            }
+        }
+
+        envButtons.forEach(btn => {
+            btn.addEventListener('click', () => applyEnvironment(btn.dataset.env, true));
+        });
+
+        // Zaman & Mevsim Değiştirici
+        function applyTheme(index) {
+            currentThemeIdx = index % THEMES.length;
+            const t = THEMES[currentThemeIdx];
+            document.body.setAttribute('data-theme', t.id);
+            document.getElementById('theme-badge-icon').textContent = t.icon;
+            document.getElementById('theme-badge-text').textContent = t.label;
+            localStorage.setItem('cozy_theme_idx', currentThemeIdx);
+        }
+
+        document.getElementById('window-interactive').addEventListener('click', () => {
+            applyTheme(currentThemeIdx + 1);
+            const t = THEMES[currentThemeIdx];
+            showCozyToast(t.icon, `Atmosfer "${t.label}" olarak değiştirildi.`);
+        });
+
+        document.getElementById('theme-badge-btn').addEventListener('click', () => {
+            applyTheme(currentThemeIdx + 1);
+            const t = THEMES[currentThemeIdx];
+            showCozyToast(t.icon, `Atmosfer "${t.label}" olarak değiştirildi.`);
+        });
+
+        // Sağdaki Masa Lambası Aç/Kapat
+        function toggleDeskLamp() {
+            soundEngine.playLampSwitch();
+            const isOn = document.body.getAttribute('data-lamp') === 'on';
+            const nextState = isOn ? 'off' : 'on';
+            document.body.setAttribute('data-lamp', nextState);
+
+            const cord = document.getElementById('lamp-pull-cord');
+            cord.classList.add('cord-pulled');
+            setTimeout(() => cord.classList.remove('cord-pulled'), 220);
+
+            const baseSwitch = document.getElementById('lamp-base-switch');
+            const topLampText = document.getElementById('top-lamp-text');
+            if (nextState === 'on') {
+                baseSwitch.setAttribute('fill', '#f59e0b');
+                topLampText.textContent = 'Lamba Açık';
+            } else {
+                baseSwitch.setAttribute('fill', '#475569');
+                topLampText.textContent = 'Lamba Kapalı';
+            }
+
+            showCozyToast('💡', nextState === 'on' ? 'Sıcak odak lambası açıldı.' : 'Masa lambası kapatıldı, oda loşlaştı.');
+        }
+
+        document.getElementById('lamp-interactive').addEventListener('click', toggleDeskLamp);
+        document.getElementById('top-lamp-btn').addEventListener('click', toggleDeskLamp);
+
+        // Kahve Kupası Etkileşimi
+        document.getElementById('coffee-interactive').addEventListener('click', () => {
+            soundEngine.playPorcelainClink();
+            const steamGroup = document.getElementById('coffee-steam-group');
+            steamGroup.classList.add('steam-boost');
+            setTimeout(() => steamGroup.classList.remove('steam-boost'), 2600);
+
+            const msg = COFFEE_MESSAGES[Math.floor(Math.random() * COFFEE_MESSAGES.length)];
+            showCozyToast('☕', msg);
+        });
+
+        // Kedi Etkileşimi
+        document.getElementById('cozy-cat').addEventListener('click', () => {
+            soundEngine.playCatPurr();
+            const catEl = document.getElementById('cozy-cat');
+            const heartEl = document.getElementById('cat-heart');
+            catEl.classList.add('cat-purring');
+            heartEl.classList.add('heart-float');
+            setTimeout(() => {
+                catEl.classList.remove('cat-purring');
+                heartEl.classList.remove('heart-float');
+            }, 1500);
+            showCozyToast('🐾', 'Mırnav mırıldanarak geriniyor: Prrrr...');
+        });
+
+        // Dağ Evi Şömine Etkileşimi (Ateşi Harlar & Şömine Sesini Artırır)
+        document.getElementById('fireplace-interactive').addEventListener('click', () => {
+            soundEngine.playFireStoke();
+            const flames = document.getElementById('svg-flames');
+            flames.classList.add('fireplace-stoked');
+            setTimeout(() => flames.classList.remove('fireplace-stoked'), 2000);
+
+            const fireSlider = document.querySelector('.sound-slider[data-channel="fire"]');
+            const nextVal = Math.min(1, parseFloat(fireSlider.value) + 0.25);
+            fireSlider.value = nextVal;
+            fireSlider.dispatchEvent(new Event('input'));
+            showCozyToast('🔥', 'Şömineye yeni odun atıldı, ateş harlandı!');
+        });
+
+        // Laptop Etkileşimi (Hızlı Not Defterini Açar)
+        document.getElementById('laptop-interactive').addEventListener('click', () => {
+            togglePanel('panel-notes');
+        });
+
+        // Hızlı Not Defteri LocalStorage Kaydı
+        const scratchpad = document.getElementById('scratchpad-area');
+        scratchpad.value = localStorage.getItem('cozy_scratchpad') || '';
+        scratchpad.addEventListener('input', (e) => {
+            localStorage.setItem('cozy_scratchpad', e.target.value);
+        });
+
+        // Masaüstü Tooltip Takibi
+        const tooltip = document.getElementById('scene-tooltip');
+        document.querySelectorAll('.scene-interactive').forEach(el => {
+            el.addEventListener('mouseenter', () => {
+                tooltip.textContent = el.dataset.tooltip;
+                tooltip.classList.remove('opacity-0');
+                tooltip.classList.add('opacity-100');
+            });
+            el.addEventListener('mousemove', (e) => {
+                tooltip.style.left = `${e.clientX + 16}px`;
+                tooltip.style.top = `${e.clientY - 16}px`;
+            });
+            el.addEventListener('mouseleave', () => {
+                tooltip.classList.remove('opacity-100');
+                tooltip.classList.add('opacity-0');
+            });
+        });
+
+        /* ==========================================
+           4. MİKSER KONTROLLERİ VE PRESETLER (6 KANAL)
+           ========================================== */
+        const PRESETS = {
+            coding:      { rain: 0.35, fire: 0.15, wind: 0.0,  keyboard: 0.65, lofi: 0.45, binaural: 0.0 },
+            winterCabin: { rain: 0.0,  fire: 0.80, wind: 0.60, keyboard: 0.0,  lofi: 0.40, binaural: 0.0 },
+            cozy:        { rain: 0.80, fire: 0.55, wind: 0.0,  keyboard: 0.0,  lofi: 0.55, binaural: 0.0 },
+            reset:       { rain: 0.0,  fire: 0.0,  wind: 0.0,  keyboard: 0.0,  lofi: 0.0,  binaural: 0.0 }
+        };
+
+        const sliders = document.querySelectorAll('.sound-slider');
+        const laptopScreen = document.getElementById('laptop-screen-glow');
+
+        function syncVisualsWithAudio(mix) {
+            rainIntensity = mix.rain || 0;
+            windIntensity = mix.wind || 0;
+
+            if ((mix.keyboard || 0) > 0.05) {
+                laptopScreen.classList.add('typing-active');
+            } else {
+                laptopScreen.classList.remove('typing-active');
+            }
+
+            // Şömine alev boyutu sesle orantılı büyür
+            const fireLevel = mix.fire || 0;
+            const flames = document.getElementById('svg-flames');
+            if (flames) {
+                flames.style.opacity = 0.45 + fireLevel * 0.55;
+            }
+
+            const totalVol = Object.values(mix).reduce((a, b) => a + b, 0);
+            document.getElementById('active-sound-status').textContent = totalVol > 0.02 ? 'Çalıyor' : 'Sessiz';
+        }
+
+        function applyMix(mixObj, save = true) {
+            sliders.forEach(slider => {
+                const ch = slider.dataset.channel;
+                if (mixObj[ch] !== undefined) {
+                    const val = parseFloat(mixObj[ch]);
+                    slider.value = val;
+                    document.getElementById(`val-${ch}`).textContent = `${Math.round(val * 100)}%`;
+                    soundEngine.setChannelVolume(ch, val);
+                }
+            });
+            syncVisualsWithAudio(mixObj);
+            if (save) localStorage.setItem('cozy_saved_mix', JSON.stringify(mixObj));
+        }
+
+        sliders.forEach(slider => {
+            slider.addEventListener('input', () => {
+                const currentMix = {};
+                sliders.forEach(s => {
+                    currentMix[s.dataset.channel] = parseFloat(s.value);
+                });
+                applyMix(currentMix, true);
+            });
+        });
+
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const presetKey = btn.dataset.preset;
+                const p = PRESETS[presetKey];
+                if (p) {
+                    applyMix(p, true);
+                    // Dağ Evi Kış presetine basılınca otomatik Dağ Evi + Kış temasına geç
+                    if (presetKey === 'winterCabin') {
+                        applyEnvironment('cabin', false);
+                        applyTheme(2); // 2 = Kış & Kar
+                    }
+                    showCozyToast('🎧', `"${btn.textContent.trim()}" atmosferi uygulandı.`);
+                }
+            });
+        });
+
+        document.getElementById('master-mute-btn').addEventListener('click', (e) => {
+            const muted = soundEngine.toggleMasterMute();
+            e.currentTarget.textContent = muted ? '🔇' : '🔊';
+            showCozyToast(muted ? '🔇' : '🔊', muted ? 'Tüm sesler susturuldu.' : 'Sesler tekrar aktif.');
+        });
+
+        document.getElementById('fullscreen-btn').addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            } else {
+                document.exitFullscreen().catch(() => {});
+            }
+        });
+
+        /* ==========================================
+           5. ALT DOCK VE MOBİL AKILLI PANEL YÖNETİMİ
+           ========================================== */
+        const dockBtns = document.querySelectorAll('.dock-btn');
+        const panels = ['panel-mixer', 'panel-focus', 'panel-notes'];
+
+        function setPanelState(panelId, shouldShow) {
+            const panelEl = document.getElementById(panelId);
+            if (!panelEl) return;
+
+            // MOBİL KORUMASI: Ekran darsa (< 768px) bir panel açılırken diğerlerini otomatik kapat
+            if (shouldShow && window.innerWidth < 768) {
+                panels.forEach(otherId => {
+                    if (otherId !== panelId) setPanelState(otherId, false);
+                });
+            }
+
+            if (shouldShow) {
+                panelEl.classList.remove('panel-hidden');
+                panelEl.classList.add('active');
+            } else {
+                panelEl.classList.remove('active');
+                panelEl.classList.add('panel-hidden');
+                if (panelEl.contains(document.activeElement)) {
+                    document.activeElement.blur();
+                }
+            }
+
+            const dockBtn = document.querySelector(`.dock-btn[data-target="${panelId}"]`);
+            if (dockBtn) {
+                dockBtn.classList.toggle('bg-white/15', shouldShow);
+                dockBtn.classList.toggle('text-white', shouldShow);
+                dockBtn.classList.toggle('border-white/15', shouldShow);
+                dockBtn.classList.toggle('bg-transparent', !shouldShow);
+                dockBtn.classList.toggle('text-slate-400', !shouldShow);
+                dockBtn.classList.toggle('border-transparent', !shouldShow);
+            }
+        }
+
+        function togglePanel(panelId) {
+            const panelEl = document.getElementById(panelId);
+            const isCurrentlyHidden = panelEl.classList.contains('panel-hidden');
+            setPanelState(panelId, isCurrentlyHidden);
+        }
+
+        dockBtns.forEach(btn => {
+            btn.addEventListener('click', () => togglePanel(btn.dataset.target));
+        });
+
+        document.querySelectorAll('[data-close]').forEach(btn => {
+            btn.addEventListener('click', () => setPanelState(btn.dataset.close, false));
+        });
+
+        document.getElementById('zen-view-btn').addEventListener('click', () => {
+            const anyVisible = panels.some(id => !document.getElementById(id).classList.contains('panel-hidden'));
+            if (anyVisible) {
+                panels.forEach(id => setPanelState(id, false));
+                showCozyToast('✨', 'Sinema modu: Tüm paneller gizlendi.');
+            } else {
+                if (window.innerWidth < 768) {
+                    setPanelState('panel-mixer', true);
+                } else {
+                    setPanelState('panel-mixer', true);
+                    setPanelState('panel-focus', true);
+                }
+            }
+        });
+
+        // İlk açılışta mobil cihazsa sahnenin kapanmaması için sadece tek paneli veya manzarayı göster
+        if (window.innerWidth < 768) {
+            setPanelState('panel-focus', false);
+        }
+
+        /* ==========================================
+           6. POMODORO ODAK SAYACI (HALKA İLERLEMELİ)
+           ========================================== */
+        let pomoTotalSeconds = 25 * 60;
+        let pomoRemaining = 25 * 60;
+        let pomoInterval = null;
+        let completedPomos = parseInt(localStorage.getItem('cozy_pomo_count') || '0', 10);
+
+        const pomoDisplay = document.getElementById('pomo-display');
+        const pomoRing = document.getElementById('pomo-ring');
+        const pomoStartBtn = document.getElementById('pomo-start-btn');
+        const pomoCountBadge = document.getElementById('pomo-count-badge');
+        const RING_CIRCUMFERENCE = 326.7;
+
+        pomoCountBadge.textContent = `🍅 ${completedPomos} Oturum Bitti`;
+
+        function updatePomoUI() {
+            const mins = String(Math.floor(pomoRemaining / 60)).padStart(2, '0');
+            const secs = String(pomoRemaining % 60).padStart(2, '0');
+            pomoDisplay.textContent = `${mins}:${secs}`;
+
+            const progress = 1 - (pomoRemaining / pomoTotalSeconds);
+            pomoRing.style.strokeDashoffset = `${progress * RING_CIRCUMFERENCE}`;
+        }
+
+        pomoStartBtn.addEventListener('click', () => {
+            if (pomoInterval) {
+                clearInterval(pomoInterval);
+                pomoInterval = null;
+                pomoStartBtn.textContent = 'Devam';
+            } else {
+                pomoStartBtn.textContent = 'Duraklat';
+                pomoInterval = setInterval(() => {
+                    if (pomoRemaining > 0) {
+                        pomoRemaining--;
+                        updatePomoUI();
+                    } else {
+                        clearInterval(pomoInterval);
+                        pomoInterval = null;
+                        pomoStartBtn.textContent = 'Başlat';
+                        soundEngine.playPorcelainClink();
+                        completedPomos++;
+                        localStorage.setItem('cozy_pomo_count', completedPomos);
+                        pomoCountBadge.textContent = `🍅 ${completedPomos} Oturum Bitti`;
+                        showCozyToast('🎉', 'Odak oturumu tamamlandı! Harika bir iş çıkardın.');
+                    }
+                }, 1000);
+            }
+        });
+
+        document.getElementById('pomo-reset-btn').addEventListener('click', () => {
+            clearInterval(pomoInterval);
+            pomoInterval = null;
+            pomoRemaining = pomoTotalSeconds;
+            pomoStartBtn.textContent = 'Başlat';
+            updatePomoUI();
+        });
+
+        document.querySelectorAll('.pomo-mode-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.pomo-mode-btn').forEach(b => {
+                    b.classList.remove('bg-white/15', 'text-white');
+                    b.classList.add('text-slate-400');
+                });
+                btn.classList.add('bg-white/15', 'text-white');
+                btn.classList.remove('text-slate-400');
+
+                clearInterval(pomoInterval);
+                pomoInterval = null;
+                pomoTotalSeconds = parseInt(btn.dataset.minutes, 10) * 60;
+                pomoRemaining = pomoTotalSeconds;
+                document.getElementById('pomo-session-text').textContent = btn.dataset.label;
+                pomoStartBtn.textContent = 'Başlat';
+                updatePomoUI();
+            });
+        });
+
+        /* ==========================================
+           7. GÖREV LİSTESİ (LOCALSTORAGE DESTEKLİ)
+           ========================================== */
+        let todos = JSON.parse(localStorage.getItem('cozy_todos')) || [
+            { text: 'Sağdaki masa lambasının ipini çek', done: false },
+            { text: 'Soldaki uyuyan kediye dokun', done: false },
+            { text: 'Yağmur ve Lo-Fi seslerini karıştır', done: false }
+        ];
+
+        const todoListEl = document.getElementById('todo-list');
+        const todoInputEl = document.getElementById('todo-input');
+        const dockTodoCount = document.getElementById('dock-todo-count');
+
+        function renderTodos() {
+            todoListEl.innerHTML = '';
+            const activeCount = todos.filter(t => !t.done).length;
+            dockTodoCount.textContent = activeCount;
+
+            todos.forEach((todo, idx) => {
+                const li = document.createElement('li');
+                li.className = 'group flex items-center justify-between px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-xs transition cursor-pointer';
+                li.innerHTML = `
+                    <div class="flex items-center gap-2.5 truncate pr-2">
+                        <span class="w-4 h-4 rounded-md border border-amber-400/60 flex items-center justify-center text-[10px] ${todo.done ? 'bg-amber-400 text-slate-950 font-bold' : ''}">
+                            ${todo.done ? '✓' : ''}
+                        </span>
+                        <span class="truncate ${todo.done ? 'line-through text-slate-400' : 'text-slate-100'}">${todo.text}</span>
+                    </div>
+                    <button data-del="${idx}" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-rose-400 px-1.5 transition">✕</button>
+                `;
+
+                li.addEventListener('click', (e) => {
+                    if (e.target.dataset.del !== undefined) {
+                        todos.splice(idx, 1);
+                    } else {
+                        todos[idx].done = !todos[idx].done;
+                        if (todos[idx].done) soundEngine.playPorcelainClink();
+                    }
+                    localStorage.setItem('cozy_todos', JSON.stringify(todos));
+                    renderTodos();
+                });
+
+                todoListEl.appendChild(li);
+            });
+        }
+
+        document.getElementById('todo-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const val = todoInputEl.value.trim();
+            if (!val) return;
+            todos.unshift({ text: val, done: false });
+            todoInputEl.value = '';
+            localStorage.setItem('cozy_todos', JSON.stringify(todos));
+            renderTodos();
+        });
+
+        /* ==========================================
+           8. CANLI SAAT VE BAŞLANGIÇ YÜKLEMESİ
+           ========================================== */
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('live-clock').textContent = now.toLocaleTimeString('tr-TR', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        const savedEnv = localStorage.getItem('cozy_env') || 'cafe';
+        applyEnvironment(savedEnv, false);
+
+        const savedThemeIdx = parseInt(localStorage.getItem('cozy_theme_idx') || '0', 10);
+        applyTheme(savedThemeIdx);
+
+        const savedMix = JSON.parse(localStorage.getItem('cozy_saved_mix') || 'null');
+        if (savedMix) {
+            sliders.forEach(s => {
+                const ch = s.dataset.channel;
+                if (savedMix[ch] !== undefined) {
+                    s.value = savedMix[ch];
+                    document.getElementById(`val-${ch}`).textContent = `${Math.round(savedMix[ch] * 100)}%`;
+                }
+            });
+            syncVisualsWithAudio(savedMix);
+        }
+
+        renderTodos();
+        updatePomoUI();
+    </script>
+</body>
+</html>
